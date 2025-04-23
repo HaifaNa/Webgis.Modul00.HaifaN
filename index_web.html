@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <!DOCTYPE html>
+        <html lang="id">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Peta Sebaran Fasilitas Kesehatan di Kota Tangerang</title>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <style>
+                /* Reset dan variabel */
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                }
+                
+                :root {
+                    --pink: #ec4899;
+                    --pink-dark: #be185d;
+                    --cream: #fffbeb;
+                    --cream-dark: #fef3c7;
+                    --gray: #4b5563;
+                    --gray-light: #9ca3af;
+                }
+                
+                /* Styling dasar */
+                body {
+                    background-color: var(--cream);
+                    color: var(--gray);
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .container {
+                    width: 100%;
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    padding: 0 1rem;
+                }
+                
+                /* Header */
+                header {
+                    background-color: var(--cream);
+                    border-bottom: 1px solid var(--cream-dark);
+                    position: sticky;
+                    top: 0;
+                    z-index: 50;
+                }
+                
+                .header-container {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    height: 4rem;
+                    padding: 0 1rem;
+                }
+                
+                .logo {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+                
+                .logo i {
+                    color: var(--pink);
+                    font-size: 1.5rem;
+                }
+                
+                .logo-text {
+                    font-weight: bold;
+                    font-size: 1.25rem;
+                    color: var(--pink);
+                }
+                
+                .city-name {
+                    display: none;
+                    color: var(--pink);
+                }
+                
+                /* Navigasi */
+                .desktop-nav {
+                    display: none;
+                    flex: 1;
+                    justify-content: flex-end;
+                    align-items: center;
+                    gap: 1.5rem;
+                }
+                
+                .search-container {
+                    position: relative;
+                    width: 100%;
+                    max-width: 300px;
+                }
+                
+                .search-container i {
+                    position: absolute;
+                    left: 0.75rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: var(--gray-light);
+                }
+                
+                .search-input {
+                    width: 100%;
+                    padding: 0.5rem 0.5rem 0.5rem 2rem;
+                    border: 1px solid var(--cream-dark);
+                    border-radius: 0.25rem;
+                    background-color: white;
+                }
+                
+                .nav-links {
+                    display: flex;
+                    align-items: center;
+                    gap: 1.5rem;
+                }
+                
+                .nav-link {
+                    color: var(--gray);
+                    text-decoration: none;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    transition: color 0.2s;
+                }
+                
+                .nav-link:hover, .nav-link.active {
+                    color: var(--pink);
+                }
+                
+                .nav-link.active {
+                    color: var(--pink);
+                }
+                
+                .location-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    background-color: var(--pink);
+                    color: white;
+                    border: none;
+                    border-radius: 0.25rem;
+                    padding: 0.5rem 1rem;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                }
+                
+                .location-btn:hover {
+                    background-color: var(--pink-dark);
+                }
+                
+                /* Menu mobile */
+                .mobile-menu-btn {
+                    display: block;
+                    background: none;
+                    border: none;
+                    font-size: 1.5rem;
+                    color: var(--gray);
+                    cursor: pointer;
+                }
+                
+                .mobile-menu {
+                    display: none;
+                    padding: 1rem 0;
+                    border-top: 1px solid var(--cream-dark);
+                }
+                
+                .mobile-menu.active {
+                    display: block;
+                }
+                
+                .mobile-search {
+                    margin-bottom: 1rem;
+                }
+                
+                .mobile-nav {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+                
+                .mobile-location-btn {
+                    width: 100%;
+                    margin-top: 0.5rem;
+                }
+                
+                /* Main content */
+                main {
+                    flex: 1;
+                    padding: 2rem 0;
+                }
+                
+                .page-title {
+                    font-size: 1.875rem;
+                    font-weight: bold;
+                    margin-bottom: 1.5rem;
+                    color: var(--pink);
+                }
+                
+                .description {
+                    margin-bottom: 1rem;
+                    line-height: 1.6;
+                }
+                
+                .map-container {
+                    height: 400px;
+                    background-color: white;
+                    border: 1px solid var(--cream-dark);
+                    border-radius: 0.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--gray-light);
+                }
+                
+                /* Media queries */
+                @media (min-width: 768px) {
+                    .desktop-nav {
+                        display: flex;
+                    }
+                    
+                    .mobile-menu-btn {
+                        display: none;
+                    }
+                    
+                    .city-name {
+                        display: inline;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <header>
+                <div class="container header-container">
+                    <div class="logo">
+                        <i class="fa-solid fa-hospital"></i>
+                        <span class="logo-text">Peta Sebaran Fasilitas Kesehatan<span class="city-name"> di Kota Tangerang</span></span>
+                    </div>
+                    
+                    <div class="desktop-nav">
+                        <div class="search-container">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="search" class="search-input" placeholder="Cari fasilitas kesehatan...">
+                        </div>
+                        
+                        <nav class="nav-links">
+                            <a href="/" class="nav-link">Beranda</a>
+                            <a href="/peta" class="nav-link active">Peta</a>
+                            <a href="/daftar" class="nav-link">Daftar Fasilitas</a>
+                            <a href="/tentang" class="nav-link">Tentang</a>
+                        </nav>
+                        
+                        <button class="location-btn">
+                            <i class="fa-solid fa-location-dot"></i>
+                            Lokasi Saya
+                        </button>
+                    </div>
+                    
+                    <button class="mobile-menu-btn" id="menuToggle">
+                        <i class="fa-solid fa-bars" id="menuIcon"></i>
+                    </button>
+                </div>
+                
+                <div class="container mobile-menu" id="mobileMenu">
+                    <div class="search-container mobile-search">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="search" class="search-input" placeholder="Cari fasilitas kesehatan...">
+                    </div>
+                    
+                    <nav class="mobile-nav">
+                        <a href="/" class="nav-link">Beranda</a>
+                        <a href="/peta" class="nav-link active">Peta</a>
+                        <a href="/daftar" class="nav-link">Daftar Fasilitas</a>
+                        <a href="/tentang" class="nav-link">Tentang</a>
+                        
+                        <button class="location-btn mobile-location-btn">
+                            <i class="fa-solid fa-location-dot"></i>
+                            Lokasi Saya
+                        </button>
+                    </nav>
+                </div>
+            </header>
+            
+            <main class="container">
+                <h1 class="page-title">Peta Sebaran Fasilitas Kesehatan di Kota Tangerang</h1>
+                
+                <p class="description">
+                    Selamat datang di portal pemetaan fasilitas kesehatan Kota Tangerang. Gunakan peta interaktif kami untuk menemukan rumah sakit, puskesmas, klinik, dan fasilitas kesehatan lainnya di sekitar Kota Tangerang.
+                </p>
+                
+                <div class="map-container">
+                    <p>Peta akan ditampilkan di sini</p>
+                </div>
+            </main>
+            
+            <script>
+                // Toggle menu mobile
+                const menuToggle = document.getElementById('menuToggle');
+                const menuIcon = document.getElementById('menuIcon');
+                const mobileMenu = document.getElementById('mobileMenu');
+                
+                menuToggle.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('active');
+                    
+                    if (mobileMenu.classList.contains('active')) {
+                        menuIcon.classList.remove('fa-bars');
+                        menuIcon.classList.add('fa-xmark');
+                    } else {
+                        menuIcon.classList.remove('fa-xmark');
+                        menuIcon.classList.add('fa-bars');
+                    }
+                });
+            </script>
+        </body>
+        </html>
+        import Header from "@/components/header"
+
+export default function Home() {
+  return (
+    <div className="min-h-screen flex flex-col bg-amber-50">
+      <Header />
+      <main className="flex-1 container py-8">
+        <h1 className="text-3xl font-bold mb-6 text-pink-600">Peta Sebaran Fasilitas Kesehatan di Kota Tangerang</h1>
+        <p className="text-gray-700 mb-4">
+          Selamat datang di portal pemetaan fasilitas kesehatan Kota Tangerang. Gunakan peta interaktif kami untuk
+          menemukan rumah sakit, puskesmas, klinik, dan fasilitas kesehatan lainnya di sekitar Kota Tangerang.
+        </p>
+        <div className="h-[400px] bg-white rounded-lg flex items-center justify-center border">
+          <p className="text-gray-500">Peta akan ditampilkan di sini</p>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-amber-50 border-amber-200">
+      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-2">
+          <Hospital className="h-6 w-6 text-pink-600" />
+          <span className="text-lg font-bold text-pink-600 md:text-xl">
+            Peta Sebaran Fasilitas Kesehatan
+            <span className="hidden text-pink-600 md:inline"> di Kota Tangerang</span>
+          </span>
+        </div>
+
+        <div className="hidden md:flex md:flex-1 md:items-center md:justify-end md:gap-4 lg:gap-6">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Cari fasilitas kesehatan..."
+              className="w-full bg-background pl-8 md:w-[300px] lg:w-[400px]"
+            />
+          </div>
+          <nav className="flex items-center gap-4 lg:gap-6">
+            <Link href="/" className="text-sm font-medium transition-colors hover:text-pink-600">
+              Beranda
+            </Link>
+            <Link href="/peta" className="text-sm font-medium text-pink-600 transition-colors">
+              Peta
+            </Link>
+            <Link href="/daftar" className="text-sm font-medium transition-colors hover:text-pink-600">
+              Daftar Fasilitas
+            </Link>
+            <Link href="/tentang" className="text-sm font-medium transition-colors hover:text-pink-600">
+              Tentang
+            </Link>
+          </nav>
+          <Button size="sm" className="bg-pink-600 hover:bg-pink-700">
+            <MapPin className="mr-2 h-4 w-4" />
+            Lokasi Saya
+          </Button>
+        </div>
+
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={} => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+      </div>
+
+      {/* Mobile menu */}
+      {isMenuOpen && (
+        <div className="container border-t py-4 md:hidden">
+          <div className="relative mb-4">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input type="search" placeholder="Cari fasilitas kesehatan..." className="w-full bg-background pl-8" />
+          </div>
+          <nav className="flex flex-col space-y-4">
+            <Link href="/" className="text-sm font-medium transition-colors hover:text-pink-600">
+              Beranda
+            </Link>
+            <Link href="/peta" className="text-sm font-medium text-pink-600 transition-colors">
+              Peta
+            </Link>
+            <Link href="/daftar" className="text-sm font-medium transition-colors hover:text-pink-600">
+              Daftar Fasilitas
+            </Link>
+            <Link href="/tentang" className="text-sm font-medium transition-colors hover:text-pink-600">
+              Tentang
+            </Link>
+            <Button size="sm" className="mt-2 w-full bg-pink-600 hover:bg-pink-700">
+              <MapPin className="mr-2 h-4 w-4" />
+              Lokasi Saya
+            </Button>
+          </nav>
+        </div>
+      )}
+    </header>
+  )
+}
+import Header from "@/components/header"
+
+export default function Home() {
+  return (
+    <div className="min-h-screen flex flex-col bg-amber-50">
+      <Header />
+      <main className="flex-1 container py-8">
+        <h1 className="text-3xl font-bold mb-6 text-pink-600">Peta Sebaran Fasilitas Kesehatan di Kota Tangerang</h1>
+        <p className="text-gray-700 mb-4">
+          Selamat datang di portal pemetaan fasilitas kesehatan Kota Tangerang. Gunakan peta interaktif kami untuk
+          menemukan rumah sakit, puskesmas, klinik, dan fasilitas kesehatan lainnya di sekitar Kota Tangerang.
+        </p>
+        <div className="h-[400px] bg-white rounded-lg flex items-center justify-center border">
+          <p className="text-gray-500">Peta akan ditampilkan di sini</p>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/multi-style-layer.js"></script>
+        <script src="js/leaflet-svg-shape-markers.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="data/Admin_Kecamatan_TNG_1.js"></script>
+        <script src="data/Puskesmas_TNG_2.js"></script>
+        <script src="data/Jalan_TNG_3.js"></script>
+        <script src="data/Rumah_Sakit_TNG_4.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-6.262600456737281,106.54686228191758],[-6.100494753931364,106.79659268894292]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_ESRISatellite_0');
+        map.getPane('pane_ESRISatellite_0').style.zIndex = 400;
+        var layer_ESRISatellite_0 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            pane: 'pane_ESRISatellite_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_ESRISatellite_0;
+        map.addLayer(layer_ESRISatellite_0);
+        function pop_Admin_Kecamatan_TNG_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['WADMKC'] !== null ? autolinker.link(String(feature.properties['WADMKC']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Admin_Kecamatan_TNG_1_0(feature) {
+            switch(String(feature.properties['WADMKC'])) {
+                case 'Batuceper':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,136,55,0.5019607843137255)',
+                interactive: true,
+            }
+                    break;
+                case 'Benda':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(60,166,93,0.4980392156862745)',
+                interactive: true,
+            }
+                    break;
+                case 'Cibodas':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(121,196,131,0.4980392156862745)',
+                interactive: true,
+            }
+                    break;
+                case 'Ciledug':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(173,222,168,0.49411764705882355)',
+                interactive: true,
+            }
+                    break;
+                case 'Cipondoh':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(203,232,200,0.4980392156862745)',
+                interactive: true,
+            }
+                    break;
+                case 'Jatiuwung':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,242,231,0.5019607843137255)',
+                interactive: true,
+            }
+                    break;
+                case 'Karang Tengah':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(237,232,240,0.5019607843137255)',
+                interactive: true,
+            }
+                    break;
+                case 'Karawaci':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(218,202,225,0.5019607843137255)',
+                interactive: true,
+            }
+                    break;
+                case 'Larangan':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(199,172,211,0.5019607843137255)',
+                interactive: true,
+            }
+                    break;
+                case 'Periuk':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(175,134,191,0.5019607843137255)',
+                interactive: true,
+            }
+                    break;
+                case 'Pinang':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(149,92,169,0.4980392156862745)',
+                interactive: true,
+            }
+                    break;
+                case 'Tangerang':
+                    return {
+                pane: 'pane_Admin_Kecamatan_TNG_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(123,50,148,0.4980392156862745)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Admin_Kecamatan_TNG_1');
+        map.getPane('pane_Admin_Kecamatan_TNG_1').style.zIndex = 401;
+        map.getPane('pane_Admin_Kecamatan_TNG_1').style['mix-blend-mode'] = 'normal';
+        var layer_Admin_Kecamatan_TNG_1 = new L.geoJson(json_Admin_Kecamatan_TNG_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Admin_Kecamatan_TNG_1',
+            layerName: 'layer_Admin_Kecamatan_TNG_1',
+            pane: 'pane_Admin_Kecamatan_TNG_1',
+            onEachFeature: pop_Admin_Kecamatan_TNG_1,
+            style: style_Admin_Kecamatan_TNG_1_0,
+        });
+        bounds_group.addLayer(layer_Admin_Kecamatan_TNG_1);
+        map.addLayer(layer_Admin_Kecamatan_TNG_1);
+        function pop_Puskesmas_TNG_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NAMOBJ'] !== null ? autolinker.link(String(feature.properties['NAMOBJ']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FCODE'] !== null ? autolinker.link(String(feature.properties['FCODE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['REMARK'] !== null ? autolinker.link(String(feature.properties['REMARK']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SRS_ID'] !== null ? autolinker.link(String(feature.properties['SRS_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['METADATA'] !== null ? autolinker.link(String(feature.properties['METADATA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['JPLPKM'] !== null ? autolinker.link(String(feature.properties['JPLPKM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KMPPKM'] !== null ? autolinker.link(String(feature.properties['KMPPKM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PKMKAT'] !== null ? autolinker.link(String(feature.properties['PKMKAT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PKMKODE'] !== null ? autolinker.link(String(feature.properties['PKMKODE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PKMLMT'] !== null ? autolinker.link(String(feature.properties['PKMLMT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['KWKPKM'] !== null ? autolinker.link(String(feature.properties['KWKPKM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Puskesmas_TNG_2_0() {
+            return {
+                pane: 'pane_Puskesmas_TNG_2',
+                radius: 3.999999999999997,
+                opacity: 1,
+                color: 'rgba(128,17,25,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(219,30,42,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Puskesmas_TNG_2');
+        map.getPane('pane_Puskesmas_TNG_2').style.zIndex = 402;
+        map.getPane('pane_Puskesmas_TNG_2').style['mix-blend-mode'] = 'normal';
+        var layer_Puskesmas_TNG_2 = new L.geoJson(json_Puskesmas_TNG_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Puskesmas_TNG_2',
+            layerName: 'layer_Puskesmas_TNG_2',
+            pane: 'pane_Puskesmas_TNG_2',
+            onEachFeature: pop_Puskesmas_TNG_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Puskesmas_TNG_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Puskesmas_TNG_2);
+        map.addLayer(layer_Puskesmas_TNG_2);
+        function pop_Jalan_TNG_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['REMARK'] !== null ? autolinker.link(String(feature.properties['REMARK']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Jalan_TNG_3_0(feature) {
+            switch(String(feature.properties['REMARK'])) {
+                default:
+                    return {
+                pane: 'pane_Jalan_TNG_3',
+                opacity: 1,
+                color: 'rgba(255,245,240,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Jalan Arteri':
+                    return {
+                pane: 'pane_Jalan_TNG_3',
+                opacity: 1,
+                color: 'rgba(252,164,134,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Jalan Kolektor':
+                    return {
+                pane: 'pane_Jalan_TNG_3',
+                opacity: 1,
+                color: 'rgba(234,55,42,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+                case 'Jalan Tol Dua Jalur Dengan Pemisah Fisik':
+                    return {
+                pane: 'pane_Jalan_TNG_3',
+                opacity: 1,
+                color: 'rgba(103,0,13,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Jalan_TNG_3');
+        map.getPane('pane_Jalan_TNG_3').style.zIndex = 403;
+        map.getPane('pane_Jalan_TNG_3').style['mix-blend-mode'] = 'normal';
+        var layer_Jalan_TNG_3 = new L.geoJson(json_Jalan_TNG_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Jalan_TNG_3',
+            layerName: 'layer_Jalan_TNG_3',
+            pane: 'pane_Jalan_TNG_3',
+            onEachFeature: pop_Jalan_TNG_3,
+            style: style_Jalan_TNG_3_0,
+        });
+        bounds_group.addLayer(layer_Jalan_TNG_3);
+        map.addLayer(layer_Jalan_TNG_3);
+        function pop_Rumah_Sakit_TNG_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['namobj'] !== null ? autolinker.link(String(feature.properties['namobj']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['rsalamat'] !== null ? autolinker.link(String(feature.properties['rsalamat']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['jplyrs'] !== null ? autolinker.link(String(feature.properties['jplyrs']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FCODE'] !== null ? autolinker.link(String(feature.properties['FCODE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['REMARK'] !== null ? autolinker.link(String(feature.properties['REMARK']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['METADATA'] !== null ? autolinker.link(String(feature.properties['METADATA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SRS_ID'] !== null ? autolinker.link(String(feature.properties['SRS_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TIPRST'] !== null ? autolinker.link(String(feature.properties['TIPRST']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Rumah_Sakit_TNG_4_0() {
+            return {
+                pane: 'pane_Rumah_Sakit_TNG_4',
+                radius: 10.4,
+                opacity: 1,
+                color: 'rgba(227,26,28,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,255,1.0)',
+                interactive: true,
+            }
+        }
+        function style_Rumah_Sakit_TNG_4_1() {
+            return {
+                pane: 'pane_Rumah_Sakit_TNG_4',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(227,26,28,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(227,26,28,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Rumah_Sakit_TNG_4');
+        map.getPane('pane_Rumah_Sakit_TNG_4').style.zIndex = 404;
+        map.getPane('pane_Rumah_Sakit_TNG_4').style['mix-blend-mode'] = 'normal';
+        var layer_Rumah_Sakit_TNG_4 = new L.geoJson.multiStyle(json_Rumah_Sakit_TNG_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Rumah_Sakit_TNG_4',
+            layerName: 'layer_Rumah_Sakit_TNG_4',
+            pane: 'pane_Rumah_Sakit_TNG_4',
+            onEachFeature: pop_Rumah_Sakit_TNG_4,
+            pointToLayers: [function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_Rumah_Sakit_TNG_4_0(feature));
+            },function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_Rumah_Sakit_TNG_4_1(feature));
+            },
+        ]});
+        bounds_group.addLayer(layer_Rumah_Sakit_TNG_4);
+        map.addLayer(layer_Rumah_Sakit_TNG_4);
+        setBounds();
+        </script>
+    </body>
+</html>
